@@ -7,7 +7,7 @@ package myStore;
  * This class stores information about items being sold by the store.
  *
  * @author  Trong Nguyen
- * @version 3.0
+ * @version 4.0
  */
 public class Product {
     /**
@@ -28,9 +28,9 @@ public class Product {
     /**
      * Constructor for product.
      *
-     * @param name  String for the name of the product.
-     * @param id    int value for the ID number of the product.
-     * @param price double value for the price of the product.
+     * @param name  String : for the name of the product
+     * @param id    int : value for the ID number of the product
+     * @param price double : value for the price of the product
      */
     public Product(String name, int id, double price) {
         this.name = name;
@@ -41,7 +41,7 @@ public class Product {
     /**
      * Get the name of the product.
      *
-     * @return  String of the name of the product.
+     * @return  String : the name of the product
      */
     public String getName() {
         return this.name;
@@ -50,7 +50,7 @@ public class Product {
     /**
      * Get the ID number of the product.
      *
-     * @return  int value of the ID number of the product.
+     * @return  int : value of the ID number of the product
      */
     public int getId() {
         return this.id;
@@ -59,7 +59,7 @@ public class Product {
     /**
      * Get the price of the product.
      *
-     * @return  double value of the price of the product.
+     * @return  double : value of the price of the product
      */
     public double getPrice() {
         return this.price;

@@ -3,20 +3,28 @@
 
 package myStore;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.InputMismatchException;
-import java.util.Scanner;
+import java.util.Locale;
 
 /**
  * This class manages the GUI for the store.
  *
  * @author  Trong Nguyen
- * @version 3.0
+ * @version 4.0
  */
 public class StoreView {
     /**
-     * Create an instance of store.StoreManager.
+     * Create an instance of StoreManager.
      */
     private final StoreManager storeManager;
 
@@ -26,313 +34,356 @@ public class StoreView {
     private final int cartId;
 
     /**
-     * Constructor for store.StoreView.
+     * Main JFrame Swing component.
+     */
+    private final JFrame frame;
+
+    /**
+     * ArrayList of JLabel that stores the updated stock labels display on each product panel.
+     */
+    private final ArrayList<JLabel> stockLabels = new ArrayList<>();
+
+    /**
+     * Constructor for StoreView.
      *
-     * @param storeManager  store.StoreManager object to manage information to the store.StoreView class.
-     * @param cartId        int value unique cartID for the store.ShoppingCart instance.
+     * @param storeManager  StoreManager : object to manage information to the StoreView class
+     * @param cartId        int : value unique cartID for the ShoppingCart instance
      */
     public StoreView(StoreManager storeManager, int cartId) {
         this.storeManager = storeManager;
         this.cartId = cartId;
+        this.frame = new JFrame("Client StoreView");
     }
 
     /**
-     * Graphic user-interface panel for HELP menu information for the store.StoreView class.
-     */
-    private void help() {
-        System.out.println("\\-------------------------HELP------------------------/");
-        System.out.println("browse   - to browse our inventory selection");
-        System.out.println("add      - to add products to shopping cart");
-        System.out.println("remove   - to remove products from shopping cart");
-        System.out.println("view     - to view products in your shopping cart");
-        System.out.println("checkout - to process orders in your shopping cart");
-        System.out.println("quit     - to deactivate the storeview");
-        System.out.println("exit     - to exit the program");
-        System.out.println();
-    }
-
-    /**
-     * Graphic user-interface panel for BROWSE menu information for the store.StoreView class
-     * to view the Products in stock for the store.Inventory.
-     */
-    private void browse() {
-        System.out.println("\\------------------------BROWSE-----------------------/");
-        System.out.println("Type 'help' for a list of commands.\n");
-        System.out.println("Stock | store.Product Name | Unit Price");
-        for (Product p : this.storeManager.getInventory().getProductList()) {
-            int stock = this.storeManager.checkStock(p);
-            String name = p.getName();
-            double price = p.getPrice();
-            System.out.printf("%5d | %12s | $%.2f \n", stock, name, price);
-        }
-        System.out.println();
-    }
-
-    /**
-     * Graphic user-interface panel for VIEWCART information for the store.StoreView class
-     * to view the Products in the store.ShoppingCart.
+     * ArrayList to store the JLabels that holds the images for each product panel.
      *
-     * @param cartId    int value for a unique cartID for the store.ShoppingCart object.
+     * @return  ArrayList<JLabel> : list of JLabels for images
      */
-    private void viewCart(int cartId) {
-        System.out.println("\\-----------------------VIEWCART----------------------/");
-        System.out.println("store.Product ID | store.Product Name | Quantity | Price");
-        for (Integer[] p : this.storeManager.getCartArrayList().get(cartId).getCart()) {
+    private ArrayList<JLabel> grabImages() {
+        ArrayList<JLabel> imageList = new ArrayList<>();
+        ArrayList<String> productNameList = new ArrayList<>();
+        String productName;
+
+        // Image filename has to be the name of the product in the inventory.
+        for (Product p : storeManager.getInventory().getProductCatalog()) {
+            productName = p.getName();
+            productNameList.add(productName);
+        }
+
+        for (String s : productNameList) {
+            BufferedImage image = null;
+            try {
+                image = ImageIO.read(getClass().getResource("/Images/" + s + ".jpg"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            assert image != null;
+            Image scaledImage = image.getScaledInstance(250, 250, Image.SCALE_DEFAULT);
+            JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
+            imageList.add(imageLabel);
+        }
+        return imageList;
+    }
+
+    /**
+     * Update the labels displaying the stock for each product.
+     *
+     * @param pid   int : product ID value
+     */
+    private void updateStockLabel(int pid) {
+        int stock = this.storeManager.getInventory().getStock(pid);
+        double price = this.storeManager.getInventory().getProductInfo(pid).getPrice();
+        stockLabels.get(pid).setText(String.format("($%.2f) - Stock: %d", price, stock));
+    }
+
+    /**
+     * Generate a JButton that models adding a product to the shopping cart.
+     *
+     * @param pid   int : product ID value
+     * @return      JButton : a button
+     */
+    private JButton addButton(int pid) {
+        JButton addButton = new JButton("+");
+
+        addButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                storeManager.addToCart(pid, 1);
+                updateStockLabel(pid);
+            }
+        });
+        return addButton;
+    }
+
+    /**
+     * Generate a JButton that models removing a product to the shopping cart.
+     *
+     * @param pid   int : product ID value
+     * @return      JButton : a button
+     */
+    private JButton removeButton(int pid) {
+        JButton removeButton = new JButton("-");
+
+        removeButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                storeManager.removeFromCart(pid,1);
+                updateStockLabel(pid);
+            }
+        });
+        return removeButton;
+    }
+
+    /**
+     * Generate a JButton that models quitting the store view.
+     *
+     * @return   JButton : a button
+     */
+    private JButton quitButton() {
+        JButton quitButton = new JButton("Quit");
+
+        quitButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                if (JOptionPane.showConfirmDialog(frame, "Are you sure you want to quit?", "Quit", JOptionPane.DEFAULT_OPTION)
+                        == JOptionPane.OK_OPTION) {
+                    storeManager.clear();
+                    frame.setVisible(false);
+                    frame.dispose();
+                }
+            }
+        });
+        return quitButton;
+    }
+
+    /**
+     * Generate the String representation to be displayed by the viewcart functionality.
+     *
+     * @return  String : the String to be displayed
+     */
+    private String viewCartString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\\-------------------------VIEWCART-----------------------/\n");
+        sb.append("Product ID | Product Name | Quantity | Price\n");
+        for (Integer[] p : storeManager.getShoppingCart().getCart()) {
             int id = p[0];
-            String name = this.storeManager.getInventory().getProduct(id).getName();
+            String name = storeManager.getInventory().getProductInfo(id).getName();
             int quantity = p[1];
-            double price = this.storeManager.getInventory().getProduct(id).getPrice();
-            System.out.printf("%10d | %12s | %8d | $%.2f \n", id, name, quantity, price);
+            double price = storeManager.getInventory().getProductInfo(id).getPrice();
+            sb.append(String.format("%-18d | %-18s | %-14d | $%.2f%n", id, name, quantity, price));
         }
-        System.out.println();
+        sb.append("\\----------------------------------------------------------------/\n");
+        return sb.toString();
     }
 
     /**
-     * Graphic user-interface panel for ADD menu information for the store.StoreView class
-     * to add Products to the shopping cart.
+     * Generate JButton that models viewing the shopping cart details.
      *
-     * @param cartId    int value for a unique cartID for the store.ShoppingCart object.
+     * @return  JButton : a button
      */
-    private void addToCart(int cartId) {
-        System.out.println("\\-------------------------ADD-------------------------/");
-        System.out.println("Stock | store.Product Name | Unit Price | Option");
-        Scanner sc = new Scanner(System.in);
-        int option = 0;
-        HashMap<Integer, Integer> optionId = new HashMap<>();
-        for (Product p : this.storeManager.getInventory().getProductList()) {
-            int stock = this.storeManager.checkStock(p);
-            String name = p.getName();
-            double price = p.getPrice();
-            int id = p.getId();
+    private JButton viewCartButton() {
+        ImageIcon cartIcon = new ImageIcon(getClass().getResource("/Images/cartIcon.jpg"));
+        Image cartImage = cartIcon.getImage();
+        Image newCartImage = cartImage.getScaledInstance(20,20, Image.SCALE_DEFAULT);
+        cartIcon = new ImageIcon(newCartImage);
+        JButton viewCartButton = new JButton("View Cart", cartIcon);
 
-            System.out.printf("%5d | %12s |    $%.2f   | (%d) \n", stock, name, price, option);
-            // Store the option key with the id value.
-            optionId.put(option, id);
-            option++;
-        }
+        viewCartButton.addActionListener(new ActionListener() {
 
-        Integer id = null;
-        Integer quantity = null;
-
-        boolean validOption = false;
-        while (!validOption) {
-            try {
-                System.out.print("Option: ");
-                int optionAdd = sc.nextInt();
-                // Check for existing key-value pair, then retrieve value.
-                if (optionId.containsKey(optionAdd)) {
-                    id = optionId.get(optionAdd);
-                    validOption = true;
-                } else {
-                    System.out.printf("STOREVIEW > ERROR > Option selection does not exist in inventory.\n" +
-                            "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, option - 1);
-                }
-            } catch (InputMismatchException e) {
-                System.out.printf("STOREVIEW > InputMismatchException > Option selection does not exist in cart.\n" +
-                        "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, option - 1);
-            } finally {
-                sc.nextLine();
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                String viewCartString = viewCartString();
+                JOptionPane.showMessageDialog(frame, viewCartString, "My Cart", JOptionPane.PLAIN_MESSAGE);
             }
-        }
 
-        boolean validQuantity = false;
-        while (!validQuantity) {
-            try {
-                System.out.print("Quantity: ");
-                quantity = sc.nextInt();
-                // Check if the ID matches a store.Product ID in the inventory.
-                if (id == this.storeManager.getInventory().getProduct(id).getId()) {
-                    // Check if sufficient quantity exists in the inventory.
-                    if (quantity <= this.storeManager.getInventory().getQuantity(id) && quantity >= 0) {
-                        validQuantity = true;
-                    } else {
-                        System.out.printf("STOREVIEW > ERROR > INVALID STOCK AMOUNT.\n" +
-                                "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, this.storeManager.getInventory().getQuantity(id));
-                    }
-                }
-            } catch (InputMismatchException e) {
-                System.out.printf("STOREVIEW > InputMismatchException > INVALID STOCK AMOUNT.\n" +
-                        "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, this.storeManager.getInventory().getQuantity(id));
-            } finally {
-                sc.nextLine();
-            }
-        }
-
-        try {
-            this.storeManager.getInventory().removeStock(id, quantity);
-            this.storeManager.getCartArrayList().get(cartId).addToCart(id, quantity);
-        } catch (Exception e) {
-            System.out.println("STOREVIEW > Exception > addToCart");
-            e.printStackTrace();
-        } finally {
-            System.out.println();
-        }
+        });
+        return viewCartButton;
     }
 
+
     /**
-     * Graphic user-interface panel for REMOVE menu information for the store.StoreView class
-     * to remove Products from the shopping cart.
+     * Generate the String representation to be displayed by the checkout functionality.
      *
-     * @param cartId    int value for a unique cartID for the store.ShoppingCart object.
+     * @return  String : the String to be displayed
      */
-    private void removeFromCart(int cartId) {
-        System.out.println("\\------------------------REMOVE-----------------------/");
-        System.out.println("Stock | store.Product Name | Unit Price | Option");
-        Scanner sc = new Scanner(System.in);
-        int option = 0;
-        HashMap<Integer, Integer> optionId = new HashMap<>();
-        HashMap<Integer, Integer> cartStock = new HashMap<>();
-        for (Integer[] p : this.storeManager.getCartArrayList().get(cartId).getCart()) {
-            int id = p[0];
-            int stock = p[1];
-            String name = this.storeManager.getInventory().getProduct(id).getName();
-            double price = this.storeManager.getInventory().getProduct(id).getPrice();
-
-            System.out.printf("%5d | %12s |    $%.2f   | (%d) \n", stock, name, price, option);
-            // Store the option key with the product id value.
-            optionId.put(option, id);
-            // Store the option key with the product stock value.
-            cartStock.put(option, stock);
-            option++;
-        }
-
-        Integer id = null;
-        Integer quantity = null;
-        Integer stock = null;
-
-        boolean validOption = false;
-        while (!validOption) {
-            try {
-                System.out.print("Option: ");
-                int optionRemove = sc.nextInt();
-                // Check for existing key-value pair, then retrieve value.
-                if (optionId.containsKey(optionRemove)) {
-                    id = optionId.get(optionRemove);
-                    // Check if the ID matches a store.Product ID in the inventory.
-                    if (id == this.storeManager.getInventory().getProduct(id).getId()) {
-                        stock = cartStock.get(optionRemove);
-                        validOption = true;
-                    }
-                } else {
-                    System.out.printf("STOREVIEW > ERROR > Option selection does not exist in cart.\n" +
-                            "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, option - 1);
-                }
-            } catch (InputMismatchException e) {
-                System.out.printf("STOREVIEW > InputMismatchException > Option selection does not exist in cart.\n" +
-                        "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, option - 1);
-            } finally {
-                sc.nextLine();
-            }
-        }
-
-        boolean validQuantity = false;
-        while (!validQuantity) {
-            try {
-                System.out.print("Quantity: ");
-                quantity = sc.nextInt();
-                // Check if sufficient quantity exists in shopping cart.
-                if (quantity >= 0 && quantity <= stock) {
-                    validQuantity = true;
-                } else {
-                    System.out.printf("STOREVIEW > ERROR > INVALID QUANTITY\n" +
-                                    "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, stock);
-                }
-            } catch (InputMismatchException e) {
-                System.out.printf("STOREVIEW > InputMismatchException > INVALID QUANTITY\n" +
-                        "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, stock);
-            } finally {
-                sc.nextLine();
-            }
-        }
-
-        try {
-            this.storeManager.getCartArrayList().get(cartId).removeFromCart(id, quantity);
-            this.storeManager.getInventory().addStock(this.storeManager.getInventory().getProduct(id), quantity);
-        } catch (Exception e) {
-            System.out.println("STOREVIEW > Exception > removeFromCart");
-            e.printStackTrace();
-        } finally {
-            System.out.println();
-        }
+    private String checkoutString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(viewCartString());
+        double totalPrice = this.storeManager.processOrder();
+        sb.append(String.format(">>> Total Purchase: $%.2f \n", totalPrice));
+        return sb.toString();
     }
 
     /**
-     * Graphic user-interface panel for CHECKOUT menu information for the store.StoreView class
-     * to process the total price of Products from the shopping cart. The store.StoreView is
-     * deactivated after checkout.
+     * Generate JButton that models viewing the checkout action functionality.
      *
-     * @param cartId    int value for a unique cartID for a given store.ShoppingCart object.
+     * @return  JButton : a button
      */
-    private void checkout(int cartId) {
-        viewCart(cartId);
-        System.out.println("\\-----------------------CHECKOUT----------------------/");
-        double totalPrice = this.storeManager.processOrder(this.storeManager.getCartArrayList().get(cartId));
-        System.out.printf(">>> Total Purchase: $%.2f \n", totalPrice);
-        System.out.println();
-    }
+    private JButton checkoutButton() {
+        JButton checkoutButton = new JButton("Checkout");
 
-    /**
-     * Graphic user-interface panel for QUIT menu information for the store.StoreView class
-     * to deactivate a store.StoreView. If users quits, then all Products in the store.ShoppingCart
-     * is returned to the store.Inventory.
-     *
-     * @param cartId    int value for a unique cartID for a given store.ShoppingCart object.
-     */
-    private void quit(int cartId) {
-        System.out.println("\\-------------------------QUIT------------------------/");
-        for (Integer[] p : this.storeManager.getCartArrayList().get(cartId).getCart()) {
-            int id = p[0];
-            int stock = p[1];
-            if (id == this.storeManager.getInventory().getProduct(id).getId()) {
-                this.storeManager.getShoppingCart().removeFromCart(id, stock);
-                this.storeManager.getInventory().addStock(this.storeManager.getInventory().getProduct(id), stock);
+        checkoutButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                String checkoutString = checkoutString();
+                if (JOptionPane.showConfirmDialog(frame, checkoutString, "Checkout", JOptionPane.DEFAULT_OPTION)
+                        == JOptionPane.OK_OPTION) {
+                    frame.setVisible(false);
+                    frame.dispose();
+                }
             }
-        }
-        System.out.println("QUIT CART >>> " + cartId);
+        });
+        return checkoutButton;
     }
 
     /**
-     * Graphic user-interface for the store system to be textually display in the console.
-     *
-     * @return  boolean false, for the displayGUI to be terminated.
+     * Graphic user-interface for the store system to be display using Java SWING interface.
      */
     public boolean displayGUI() {
-        System.out.println("CART >>> " + this.cartId);
-        System.out.println("Enter a command...");
+        this.frame.setPreferredSize(new Dimension(1000,800));
+        ImageIcon teaIcon = new ImageIcon(getClass().getResource("/Images/teaIcon.jpg"));
+        this.frame.setIconImage(teaIcon.getImage());
 
-        Scanner sc = new Scanner(System.in);
-        String choice = sc.nextLine();
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        JPanel headerPanel = new JPanel();
+        JPanel bodyPanel = new JPanel(new GridLayout());
+        JPanel eastPanel = new JPanel(new BorderLayout());
+        JPanel footerPanel = new JPanel();
 
-        System.out.println("|--------------------THE TEA SHOPPE--------------------|");
-        switch (choice) {
-            case "help":
-                help();
-                break;
-            case "browse":
-                browse();
-                break;
-            case "add":
-                addToCart(this.cartId);
-                break;
-            case "remove":
-                removeFromCart(this.cartId);
-                break;
-            case "view":
-                viewCart(this.cartId);
-                break;
-            case "checkout":
-                checkout(this.cartId);
-                return true;
-            case "quit":
-                quit(this.cartId);
-                return true;
-            case "exit":
-                System.exit(0);
-            default:
-                System.out.println("STOREVIEW > ERROR > INVALID COMMAND");
-                System.out.println("Enter command \"help\" for list of commands\n");
+        JLabel headerLabel = new JLabel(String.format("The Tea Shoppe! (ID: %d)", cartId));
+        headerLabel.setFont(new Font("MV Boli", Font.BOLD, 20));
+
+        headerPanel.setBackground(new Color(150, 155, 120));
+        headerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK,5,true));
+        headerPanel.add(headerLabel);
+
+        bodyPanel.setLayout(new GridLayout(0,2));
+        bodyPanel.setBackground(new Color(100, 100, 150));
+        eastPanel.setBackground(new Color(60, 80, 135));
+        footerPanel.setBackground(new Color(195, 100, 100));
+
+        // Create ArrayList to holds some components
+        ArrayList<JPanel> productPanels = new ArrayList<>();
+        ArrayList<JButton> addButtons = new ArrayList<>();
+        ArrayList<JButton> subButtons = new ArrayList<>();
+        ArrayList<JLabel> imageGrabbed = grabImages();
+        ArrayList<JPanel> buttonForPanels = new ArrayList<>();
+
+        for (int i = 0; i < storeManager.getInventory().getProductCatalog().size(); i++) {
+            // Create label for each of the product panels to display stock and price
+            JLabel stockLabel = new JLabel();
+            stockLabels.add(stockLabel);
+
+            // Create panels for each product
+            JPanel panel = new JPanel(new GridBagLayout());
+            panel.setBackground(new Color(100, 100, 150));
+            productPanels.add(panel);
+
+            // Create add and remove buttons
+            addButtons.add(addButton(i));
+            subButtons.add(removeButton(i));
+
+            // Add both buttons to panel
+            JPanel buttonPanel = new JPanel();
+            buttonForPanels.add(buttonPanel);
+            buttonForPanels.get(i).add(addButtons.get(i));
+            buttonForPanels.get(i).add(subButtons.get(i));
+        }
+
+
+        GridBagConstraints c = new GridBagConstraints();
+        for (int i = 0; i < storeManager.getInventory().getProductCatalog().size(); i++) {
+            // Add the label for the stock amount and price on top
+            c.gridx = 0;
+            c.gridy = 0;
+            updateStockLabel(i);
+            productPanels.get(i).add(this.stockLabels.get(i),c);
+
+            // Add the image for the product in the middle area
+            c.insets = new Insets(2,2,2,2);
+            c.gridx = 0;
+            c.gridy = 1;
+            productPanels.get(i).add(imageGrabbed.get(i), c);
+
+            // Add the remove and add product buttons below
+            c.gridx = 0;
+            c.gridy = 2;
+            productPanels.get(i).add(buttonForPanels.get(i),c);
+
+            // Add a titled line border with the product name
+            String name = this.storeManager.getInventory().getProductInfo(i).getName();
+            Border border = BorderFactory.createLineBorder(Color.BLACK);
+            TitledBorder title;
+            title = BorderFactory.createTitledBorder(border, name.toUpperCase(Locale.ROOT));
+            productPanels.get(i).setBorder(title);
+
+            // Add each of the product panels to the body panel
+            bodyPanel.add(productPanels.get(i));
+        }
+
+        // Add ScrollPane for the bodyPanel
+        JScrollPane bodyScrollPane = new JScrollPane(bodyPanel);
+        mainPanel.add(bodyScrollPane, BorderLayout.CENTER);
+
+        JPanel upperEastPanel = new JPanel(new GridLayout(0,1));
+        upperEastPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK,5,false));
+
+        // Add buttons for viewcart, checkout, and quit to the east panel
+        upperEastPanel.add(viewCartButton());
+        upperEastPanel.add(checkoutButton());
+        upperEastPanel.add(quitButton());
+
+        // Display some text for advertisement
+        JPanel lowerEastPanel = new JPanel(new BorderLayout());
+        JEditorPane salesText = new JEditorPane();
+        salesText.setText("New TEA Products in stock!\n\nAll TEA items marked down at least 25%");
+        salesText.setFont(new Font("MV Boli", Font.PLAIN, 16));
+        salesText.setSize(new Dimension(250,150));
+
+        // Display an image for advertisement
+        ImageIcon saleIcon = new ImageIcon(getClass().getResource("/Images/saleIcon.jpg"));
+        Image saleImage = saleIcon.getImage();
+        Image newSaleImage = saleImage.getScaledInstance(250,250, Image.SCALE_DEFAULT);
+        saleIcon = new ImageIcon(newSaleImage);
+        JLabel salesImage = new JLabel(saleIcon);
+
+        lowerEastPanel.add(salesText, BorderLayout.NORTH);
+        lowerEastPanel.add(salesImage, BorderLayout.SOUTH);
+
+        eastPanel.add(upperEastPanel, BorderLayout.NORTH);
+        eastPanel.add(lowerEastPanel, BorderLayout.SOUTH);
+
+        headerPanel.setPreferredSize(new Dimension(250, 50));
+        eastPanel.setPreferredSize(new Dimension(250, 100));
+        footerPanel.setPreferredSize(new Dimension(250, 10));
+
+        mainPanel.add(headerPanel, BorderLayout.PAGE_START);
+        mainPanel.add(bodyScrollPane, BorderLayout.CENTER);
+        mainPanel.add(eastPanel, BorderLayout.EAST);
+        mainPanel.add(footerPanel, BorderLayout.PAGE_END);
+
+        this.frame.add(mainPanel);
+        this.frame.pack();
+
+        this.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        this.frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent we) {
+                if (JOptionPane.showConfirmDialog(frame, "Are you sure you want to quit?")
+                        == JOptionPane.OK_OPTION) {
+                    storeManager.clear();
+                    frame.setVisible(false);
+                    frame.dispose();
+                }
             }
-        return false;
+        });
+        this.frame.setVisible(true);
+        return true;
     }
 
     /**
@@ -342,59 +393,7 @@ public class StoreView {
      */
     public static void main(String[] args) {
         StoreManager sm = new StoreManager();
-        StoreView sv1 = new StoreView(sm, sm.assignNewCartID());
-        StoreView sv2 = new StoreView(sm, sm.assignNewCartID());
-        StoreView sv3 = new StoreView(sm, sm.assignNewCartID());
-        ArrayList<StoreView> users = new ArrayList<>();
-
-        users.add(sv1);
-        users.add(sv2);
-        users.add(sv3);
-
-        int activeSV = users.size();
-
-        Scanner sc = new Scanner(System.in);
-
-        while (activeSV > 0) {
-
-            int choice = -1;
-            boolean inputValid = false;
-            while (!inputValid) {
-                try {
-                    System.out.print("CHOOSE YOUR STOREVIEW >>> ");
-                    choice = sc.nextInt();
-                    inputValid = true;
-                } catch (InputMismatchException e) {
-                    System.out.printf("MAIN > InputMismatchException > BAD CHOICE\n" +
-                                    "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, users.size() - 1);
-                } finally {
-                    sc.nextLine();
-                }
-            }
-
-            if (choice < users.size() && choice >= 0) {
-                if (users.get(choice) != null) {
-                    String chooseAnother = "";
-                    while (!chooseAnother.equals("y") && !chooseAnother.equals("Y")) {
-                        // this implementation of displayGUI waits for input and displays the page
-                        // corresponding to the user's input. it does this once, and then returns
-                        // true if the user entered 'checkout' or 'quit'.
-                        if (users.get(choice).displayGUI()) {
-                            users.set(choice, null);
-                            activeSV--;
-                            break;
-                        }
-                        System.out.print("GO TO ANOTHER STOREVIEW? (y) >>> ");
-                        chooseAnother = sc.next();
-                    }
-                } else {
-                    System.out.println("MAIN > ERROR > BAD CHOICE\nTHAT STOREVIEW WAS DEACTIVATED");
-                }
-            } else {
-                System.out.printf("MAIN > ERROR > BAD CHOICE\n" +
-                                "PLEASE CHOOSE IN RANGE [%d, %d]\n", 0, users.size() - 1);
-            }
-        }
-        System.out.println("ALL STOREVIEWS DEACTIVATED");
+        StoreView sv = new StoreView(sm, sm.assignNewCartID());
+        sv.displayGUI();
     }
 }

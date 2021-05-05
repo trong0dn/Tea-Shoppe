@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * This class keeps track of the state of the user's shopping cart.
  *
  * @author  Trong Nguyen
- * @version 3.0
+ * @version 4.0
  */
 public class ShoppingCart {
     /**
@@ -20,8 +20,8 @@ public class ShoppingCart {
     /**
      * Add a specified amount of product to the shopping cart.
      *
-     * @param id        int value for the ID number of the product.
-     * @param quantity  int value for a specified amount of product to be added to shopping cart.
+     * @param id        int : value for the ID number of the product
+     * @param quantity  int : value for a specified amount of product to be added to shopping cart
      */
     public void addToCart(int id, int quantity) {
         boolean productInCart = false;
@@ -52,20 +52,24 @@ public class ShoppingCart {
     /**
      * Remove a specified amount of product from the shopping cart.
      *
-     * @param id        int value for the ID number of the product.
-     * @param quantity  int value for a specified amount of product to be removed to shopping cart.
+     * @param id        int : value for the ID number of the product
+     * @param quantity  int : value for a specified amount of product to be removed to shopping cart
      */
     public void removeFromCart(int id, int quantity) {
+        int newQuantity;
+        int index = 0;
         if (quantity > 0) {
             for (Integer[] p : this.shoppingCart) {
                 if (p[0] == id) {
-                    p[1] -= quantity;
-                    if (p[1] <= 0) {
+                    if (quantity > p[1]) {
                         // If quantity of product in shopping cart is 0, remove the product from cart.
                         this.shoppingCart.remove(p);
-                        break;
                     }
+                    newQuantity = p[1] - quantity;
+                    Integer[] Product = {id, newQuantity};
+                    this.shoppingCart.set(index, Product);
                 }
+                index++;
             }
         }
     }
@@ -73,7 +77,7 @@ public class ShoppingCart {
     /**
      * Get ArrayList which tracks the information for the shopping carts.
      *
-     * @return  ArrayList<Integer[]> object that tracks the shopping cart.
+     * @return  ArrayList<Integer[]> : object that tracks the shopping cart
      */
     public ArrayList<Integer[]> getCart() {
         return this.shoppingCart;
