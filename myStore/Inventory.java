@@ -9,9 +9,9 @@ import java.util.ArrayList;
  * This class tracks the state of the product in inventory of the store.
  *
  * @author  Trong Nguyen
- * @version 4.0
+ * @version 5.0
  */
-public class Inventory {
+public class Inventory implements ProductStockContainer {
     /**
      * ArrayList to track the products.
      */
@@ -56,15 +56,48 @@ public class Inventory {
     }
 
     /**
-     * Get amount of stock for a given Product ID number.
+     * Get information on a product given a Product ID.
      *
-     * @param id    int : value for the ID number of the product.
-     * @return      int : value for the quantity of the product in stock.
+     * @param id    int : value for the ID number of the product
+     * @return      Product : the product object
      */
-    public int getStock(int id) {
-        int quantity = 0;
+    public Product getProductInfo(int id) {
+        int index = 0;
+        boolean productExist = false;
         for (int i = 0; i < this.productCatalog.size(); i++) {
             if (this.productCatalog.get(i).getId() == id) {
+                index = i;
+                productExist = true;
+            }
+        }
+        if (productExist) {
+            return this.productCatalog.get(index);
+        } else {
+            //INVENTORY > ERROR > product does not exist in inventory.
+            return null;
+        }
+    }
+
+    /**
+     * Get ArrayList which tracks the information for the Product objects.
+     *
+     * @return  ArrayList<Product> : object that track the Product objects
+     */
+    public ArrayList<Product> getProductCatalog() {
+        return this.productCatalog;
+    }
+
+    /**
+     * Get amount of stock for a given Product.
+     *
+     * @param product   Product : the product
+     * @return          int : the quantity of the product in stock
+     */
+    @Override
+    public int getProductQuantity(Product product) {
+        int quantity = 0;
+        for (int i = 0; i < this.productCatalog.size(); i++) {
+            if (this.productCatalog.get(i).getId() == product.getId()) {
                 quantity = this.stocks.get(i);
                 break;
             }
@@ -75,10 +108,11 @@ public class Inventory {
     /**
      * Add specified amount of stock for a given Product object to the inventory.
      *
-     * @param product  Product :  object to be added to stock.
-     * @param quantity int : value for a specified amount of stock to be added.
+     * @param product  Product :  object to be added to stock
+     * @param quantity int : value for a specified amount of stock to be added
      */
-    public void addStock(Product product, int quantity) {
+    @Override
+    public void addProductQuantity(Product product, int quantity) {
         int newQuantity;
         boolean productExist = false;
         if (quantity >= 0) {
@@ -103,16 +137,17 @@ public class Inventory {
     /**
      * Remove specified amount of stock for a given Product ID from the inventory.
      *
-     * @param id       int : value for the ID number of the product.
-     * @param quantity int : value for a specified amount of stock to be removed.
+     * @param product  Product :  object to be removed from stock
+     * @param quantity int : value for a specified amount of stock to be removed
      */
-    public void removeStock(int id, int quantity) {
+    @Override
+    public void removeProductQuantity(Product product, int quantity) {
         int newQuantity = 0;
         int index = 0;
         boolean productExist = false;
         if (quantity >= 0) {
             for (int i = 0; i < this.productCatalog.size(); i++) {
-                if (this.productCatalog.get(i).getId() == id) {
+                if (this.productCatalog.get(i).getId() == product.getId()) {
                     newQuantity = this.stocks.get(i);
                     if (quantity >= newQuantity) {
                         newQuantity = 0;
@@ -130,34 +165,12 @@ public class Inventory {
     }
 
     /**
-     * Get information on a product given a Product ID.
+     * Get number of product item in the inventory.
      *
-     * @param id    int : value for the ID number of the product
-     * @return      Product : the product object
+     * @return  int : number of products
      */
-    public Product getProductInfo(int id) {
-        int index = 0;
-        boolean productExist = false;
-        for (int i = 0; i < this.productCatalog.size(); i++) {
-            if (this.productCatalog.get(i).getId() == id) {
-                index = i;
-                productExist = true;
-            }
-        }
-        if (productExist) {
-            return this.productCatalog.get(index);
-        } else {
-            //INVENTORY > ERROR > store.Product does not exist in inventory.
-            return null;
-        }
-    }
-
-    /**
-     * Get ArrayList which tracks the information for the Product objects.
-     *
-     * @return  ArrayList<Product> : object that track the Product objects
-     */
-    public ArrayList<Product> getProductCatalog() {
-        return this.productCatalog;
+    @Override
+    public int getNumOfProducts() {
+        return getProductCatalog().size();
     }
 }

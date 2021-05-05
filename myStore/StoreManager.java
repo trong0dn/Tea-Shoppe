@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * and providing information to the StoreView class.
  *
  * @author  Trong Nguyen
- * @version 4.0
+ * @version 5.0
  */
 public class StoreManager {
     /**
@@ -32,16 +32,6 @@ public class StoreManager {
      * Initialized int cartID used to identify the user of the system.
      */
     private int CART_ID = -1;
-
-    /**
-     * Check stock of a given Product is in Inventory.
-     *
-     * @param product   Product : object to be checked
-     * @return          int  : value of amount of stock
-     */
-    public int checkStock(Product product) {
-        return this.storeInventory.getStock(product.getId());
-    }
 
     /**
      * Process transaction given shoppingCart.
@@ -83,14 +73,14 @@ public class StoreManager {
     public void addToCart(int id, int quantity) {
         for (Integer[] p : this.shoppingCart.getCart()) {
             if (p[0] == id) {
-                this.shoppingCart.addToCart(id, quantity);
-                this.storeInventory.removeStock(id, quantity);
+                this.shoppingCart.addProductQuantity(this.storeInventory.getProductInfo(id), quantity);
+                this.storeInventory.removeProductQuantity(this.storeInventory.getProductInfo(id), quantity);
                 return;
             }
         }
         // Adding to the shopping cart for the first time.
-        this.shoppingCart.addToCart(id, quantity);
-        this.storeInventory.removeStock(id, quantity);
+        this.shoppingCart.addProductQuantity(this.storeInventory.getProductInfo(id), quantity);
+        this.storeInventory.removeProductQuantity(this.storeInventory.getProductInfo(id), quantity);
     }
 
     /**
@@ -103,8 +93,8 @@ public class StoreManager {
         try {
             for (Integer[] p : this.shoppingCart.getCart()) {
                 if (p[0] == id) {
-                    this.shoppingCart.removeFromCart(id, quantity);
-                    this.storeInventory.addStock(this.storeInventory.getProductInfo(id), quantity);
+                    this.shoppingCart.removeProductQuantity(this.storeInventory.getProductInfo(id), quantity);
+                    this.storeInventory.addProductQuantity(this.storeInventory.getProductInfo(id), quantity);
                     return;
                 }
             }
@@ -121,36 +111,57 @@ public class StoreManager {
             int id = p[0];
             int stock = p[1];
             if (id == storeInventory.getProductInfo(id).getId()) {
-                this.shoppingCart.removeFromCart(id, stock);
-                this.storeInventory.addStock(this.storeInventory.getProductInfo(id), stock);
+                this.shoppingCart.removeProductQuantity(this.storeInventory.getProductInfo(id), stock);
+                this.storeInventory.addProductQuantity(this.storeInventory.getProductInfo(id), stock);
             }
         }
     }
 
     /**
-     * Get StoreManager inventory.
+     * Return stock of a given Product ID in Inventory.
      *
-     * @return  Inventory : the inventory object
+     * @param id       int : product ID
+     * @return          int : value of amount of stock
      */
-    public Inventory getInventory() {
-        return this.storeInventory;
+    public int getStock(int id) {
+        return this.storeInventory.getProductQuantity(this.storeInventory.getProductInfo(id));
     }
 
     /**
-     * Get StoreManager cartArrayList.
+     * Return price of a given Product ID in Inventory.
      *
-     * @return  ArrayList<String> : list of ShoppingCart
+     * @param id       int : product ID
+     * @return          double : price value of the product
      */
-    public ArrayList<ShoppingCart> getCartArrayList() {
-        return this.cartArrayList;
+    public double getPrice(int id) {
+        return this.storeInventory.getProductInfo(id).getPrice();
+    }
+
+    /**
+     * Return name of a given Product ID in Inventory.
+     *
+     * @param id       int : product ID
+     * @return          String : name of the product
+     */
+    public String getName(int id) {
+        return this.storeInventory.getProductInfo(id).getName();
     }
 
     /**
      * Get StoreManager shoppingCart.
      *
-     * @return  ShoppingCart : the shopping cart object
+     * @return      ArrayList<Product> : list of integer array representing a product item
      */
-    public ShoppingCart getShoppingCart() {
-        return this.shoppingCart;
+    public ArrayList<Integer[]> getShoppingCart() {
+        return this.shoppingCart.getCart();
+    }
+
+    /**
+     * Get list of Product in the Inventory.
+     *
+     * @return      ArrayList<Product> : list of products
+     */
+    public ArrayList<Product> getProductCatalog() {
+        return this.storeInventory.getProductCatalog();
     }
 }

@@ -20,7 +20,7 @@ import java.util.Locale;
  * This class manages the GUI for the store.
  *
  * @author  Trong Nguyen
- * @version 4.0
+ * @version 5.0
  */
 public class StoreView {
     /**
@@ -66,7 +66,7 @@ public class StoreView {
         String productName;
 
         // Image filename has to be the name of the product in the inventory.
-        for (Product p : storeManager.getInventory().getProductCatalog()) {
+        for (Product p : this.storeManager.getProductCatalog()) {
             productName = p.getName();
             productNameList.add(productName);
         }
@@ -92,8 +92,8 @@ public class StoreView {
      * @param pid   int : product ID value
      */
     private void updateStockLabel(int pid) {
-        int stock = this.storeManager.getInventory().getStock(pid);
-        double price = this.storeManager.getInventory().getProductInfo(pid).getPrice();
+        int stock = this.storeManager.getStock(pid);
+        double price = this.storeManager.getPrice(pid);
         stockLabels.get(pid).setText(String.format("($%.2f) - Stock: %d", price, stock));
     }
 
@@ -149,8 +149,8 @@ public class StoreView {
 
             @Override
             public void actionPerformed(ActionEvent ae) {
-                if (JOptionPane.showConfirmDialog(frame, "Are you sure you want to quit?", "Quit", JOptionPane.DEFAULT_OPTION)
-                        == JOptionPane.OK_OPTION) {
+                if (JOptionPane.showConfirmDialog(frame, "Are you sure you want to quit?", "Quit",
+                        JOptionPane.DEFAULT_OPTION) == JOptionPane.OK_OPTION) {
                     storeManager.clear();
                     frame.setVisible(false);
                     frame.dispose();
@@ -161,19 +161,19 @@ public class StoreView {
     }
 
     /**
-     * Generate the String representation to be displayed by the viewcart functionality.
+     * Generate the String representation to be displayed by the view cart functionality.
      *
      * @return  String : the String to be displayed
      */
     private String viewCartString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\\-------------------------VIEWCART-----------------------/\n");
+        sb.append("\\-------------------------VIEW CART-----------------------/\n");
         sb.append("Product ID | Product Name | Quantity | Price\n");
-        for (Integer[] p : storeManager.getShoppingCart().getCart()) {
+        for (Integer[] p : this.storeManager.getShoppingCart()) {
             int id = p[0];
-            String name = storeManager.getInventory().getProductInfo(id).getName();
+            String name = this.storeManager.getName(id);
             int quantity = p[1];
-            double price = storeManager.getInventory().getProductInfo(id).getPrice();
+            double price = this.storeManager.getPrice(id);
             sb.append(String.format("%-18d | %-18s | %-14d | $%.2f%n", id, name, quantity, price));
         }
         sb.append("\\----------------------------------------------------------------/\n");
@@ -274,7 +274,7 @@ public class StoreView {
         ArrayList<JLabel> imageGrabbed = grabImages();
         ArrayList<JPanel> buttonForPanels = new ArrayList<>();
 
-        for (int i = 0; i < storeManager.getInventory().getProductCatalog().size(); i++) {
+        for (int i = 0; i < storeManager.getProductCatalog().size(); i++) {
             // Create label for each of the product panels to display stock and price
             JLabel stockLabel = new JLabel();
             stockLabels.add(stockLabel);
@@ -297,7 +297,7 @@ public class StoreView {
 
 
         GridBagConstraints c = new GridBagConstraints();
-        for (int i = 0; i < storeManager.getInventory().getProductCatalog().size(); i++) {
+        for (int i = 0; i < this.storeManager.getProductCatalog().size(); i++) {
             // Add the label for the stock amount and price on top
             c.gridx = 0;
             c.gridy = 0;
@@ -316,7 +316,7 @@ public class StoreView {
             productPanels.get(i).add(buttonForPanels.get(i),c);
 
             // Add a titled line border with the product name
-            String name = this.storeManager.getInventory().getProductInfo(i).getName();
+            String name = this.storeManager.getName(i);
             Border border = BorderFactory.createLineBorder(Color.BLACK);
             TitledBorder title;
             title = BorderFactory.createTitledBorder(border, name.toUpperCase(Locale.ROOT));
@@ -333,7 +333,7 @@ public class StoreView {
         JPanel upperEastPanel = new JPanel(new GridLayout(0,1));
         upperEastPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK,5,false));
 
-        // Add buttons for viewcart, checkout, and quit to the east panel
+        // Add buttons for view cart, checkout, and quit to the east panel
         upperEastPanel.add(viewCartButton());
         upperEastPanel.add(checkoutButton());
         upperEastPanel.add(quitButton());
